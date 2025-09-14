@@ -51,7 +51,7 @@
     button:hover {
       background: #e68900;
     }
-    #result, #aiSuggestion, #exercisePlan {
+    #result, #aiSuggestion {
       margin-top: 20px;
       font-size: 18px;
       font-weight: bold;
@@ -69,19 +69,25 @@
       transform: rotate(-15deg);
       pointer-events: none;
     }
-    table {
-      width: 100%;
+    /* ✅ New styling for Exercise Plan */
+    #exercisePlan {
       margin-top: 20px;
-      border-collapse: collapse;
-      color: white;
+      padding: 15px;
+      background: rgba(0,0,0,0.7); /* dark background */
+      border-radius: 12px;
+      color: #f5f5f5; /* light grey text */
+      text-align: left;
     }
-    th, td {
-      border: 1px solid rgba(255,255,255,0.3);
-      padding: 10px;
-      text-align: center;
+    #exercisePlan h3 {
+      color: #ffcc00; /* yellow heading */
+      margin-bottom: 10px;
     }
-    th {
-      background: rgba(255,255,255,0.2);
+    #exercisePlan ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    #exercisePlan li {
+      margin-bottom: 6px;
     }
   </style>
 </head>
@@ -106,7 +112,6 @@
     <input type="number" id="stamina" min="1" max="10" placeholder="e.g. 7">
     
     <button onclick="calculateTalent()">Check Talent</button>
-    <button id="downloadPDF" style="display:none;" onclick="downloadPDF()">Download Report (PDF)</button>
     
     <div id="result"></div>
     <canvas id="talentChart"></canvas>
@@ -115,8 +120,6 @@
   </div>
 
   <script>
-    let latestData = {}; // store results for PDF
-    
     function calculateTalent() {
       let height = parseFloat(document.getElementById("height").value);
       let weight = parseFloat(document.getElementById("weight").value);
@@ -170,101 +173,63 @@
       
       // AI-like Suggestions
       let suggestion = "";
-      let category = "";
-      if (totalScore >= 80) {
-        category = "Elite";
-        suggestion = "🏆 You have excellent fitness levels! Best suited for Competitive Athletics, Football, or Basketball.";
-      } else if (totalScore >= 60) {
-        category = "Intermediate";
-        suggestion = "⚡ You are fit and can train for Team Sports like Football, Cricket, or Volleyball.";
+      let exercisePlan = "";
+      if (sprintScore >= 20 && staminaScore >= 20) {
+        suggestion = "🏃 You are best suited for Athletics (Running / Sprinting).";
+        exercisePlan = `
+          <h3>🏃 7-Day Training Plan for Runners</h3>
+          <ul>
+            <li><b>Mon:</b> 5km light run + stretching</li>
+            <li><b>Tue:</b> Sprint intervals (10 × 100m)</li>
+            <li><b>Wed:</b> Strength training (legs & core)</li>
+            <li><b>Thu:</b> Rest or yoga</li>
+            <li><b>Fri:</b> Hill sprints (8 reps)</li>
+            <li><b>Sat:</b> Long run (8–10km)</li>
+            <li><b>Sun:</b> Active recovery walk</li>
+          </ul>`;
+      } else if (pushupScore >= 20 && staminaScore >= 18) {
+        suggestion = "💪 You are fit for Strength Sports (Football, Wrestling, Gymnastics).";
+        exercisePlan = `
+          <h3>💪 7-Day Strength Plan</h3>
+          <ul>
+            <li><b>Mon:</b> Push-ups, pull-ups, squats</li>
+            <li><b>Tue:</b> Core & abs workout</li>
+            <li><b>Wed:</b> Full-body strength (dumbbells/bodyweight)</li>
+            <li><b>Thu:</b> Rest</li>
+            <li><b>Fri:</b> Explosive drills (box jumps, burpees)</li>
+            <li><b>Sat:</b> Football/Gymnastics skill practice</li>
+            <li><b>Sun:</b> Stretching + yoga</li>
+          </ul>`;
+      } else if (bmiScore >= 20 && staminaScore >= 18) {
+        suggestion = "⚽ You could excel in Team Sports (Football, Basketball).";
+        exercisePlan = `
+          <h3>⚽ 7-Day Team Sport Plan</h3>
+          <ul>
+            <li><b>Mon:</b> Passing & dribbling drills</li>
+            <li><b>Tue:</b> Agility ladder + sprints</li>
+            <li><b>Wed:</b> Upper body workout</li>
+            <li><b>Thu:</b> Rest</li>
+            <li><b>Fri:</b> Team scrimmage practice</li>
+            <li><b>Sat:</b> Endurance run (5–7km)</li>
+            <li><b>Sun:</b> Recovery & mobility drills</li>
+          </ul>`;
       } else {
-        category = "Beginner";
-        suggestion = "💡 You need general fitness training before moving to specific sports. Focus on running, basic strength, and stamina.";
+        suggestion = "🎯 Focus on general fitness training before choosing a specific sport.";
+        exercisePlan = `
+          <h3>🏋 General 7-Day Fitness Plan</h3>
+          <ul>
+            <li><b>Mon:</b> Light cardio + stretching</li>
+            <li><b>Tue:</b> Basic strength (push-ups, squats)</li>
+            <li><b>Wed:</b> Core strengthening</li>
+            <li><b>Thu:</b> Rest</li>
+            <li><b>Fri:</b> Jogging (3km)</li>
+            <li><b>Sat:</b> Mixed cardio + light weights</li>
+            <li><b>Sun:</b> Yoga & mobility</li>
+          </ul>`;
       }
-      document.getElementById("aiSuggestion").innerHTML = 
-        `<b>AI Suggestion:</b> ${suggestion}`;
       
-      // Exercise Plans
-      let plan = "";
-      if (category === "Beginner") {
-        plan = `
-        <h2>🏋️ Beginner 7-Day Exercise Plan</h2>
-        <table>
-          <tr><th>Day</th><th>Workout</th></tr>
-          <tr><td>Mon</td><td>Light Jog (15 min) + 3x10 Pushups</td></tr>
-          <tr><td>Tue</td><td>Bodyweight Squats 3x12 + Plank 3x20s</td></tr>
-          <tr><td>Wed</td><td>Brisk Walk (30 min)</td></tr>
-          <tr><td>Thu</td><td>Jog (20 min) + 3x15 Crunches</td></tr>
-          <tr><td>Fri</td><td>Pushups 3x12 + Jumping Jacks 3x20</td></tr>
-          <tr><td>Sat</td><td>Stretching + Yoga (30 min)</td></tr>
-          <tr><td>Sun</td><td>Rest</td></tr>
-        </table>`;
-      } else if (category === "Intermediate") {
-        plan = `
-        <h2>⚡ Intermediate 7-Day Exercise Plan</h2>
-        <table>
-          <tr><th>Day</th><th>Workout</th></tr>
-          <tr><td>Mon</td><td>HIIT Run (20 min) + Pushups 4x15</td></tr>
-          <tr><td>Tue</td><td>Bodyweight Circuit (Squats, Lunges, Dips)</td></tr>
-          <tr><td>Wed</td><td>Jog (30 min) + Core Workout</td></tr>
-          <tr><td>Thu</td><td>Sprint Intervals (8x100m)</td></tr>
-          <tr><td>Fri</td><td>Strength (Pushups, Planks, Burpees)</td></tr>
-          <tr><td>Sat</td><td>Agility Drills + Sport Practice</td></tr>
-          <tr><td>Sun</td><td>Rest / Light Stretching</td></tr>
-        </table>`;
-      } else {
-        plan = `
-        <h2>🏆 Elite 7-Day Exercise Plan</h2>
-        <table>
-          <tr><th>Day</th><th>Workout</th></tr>
-          <tr><td>Mon</td><td>Sprint Training (10x100m) + Strength Drills</td></tr>
-          <tr><td>Tue</td><td>Resistance Training (Gym) + Core Stability</td></tr>
-          <tr><td>Wed</td><td>Endurance Run (45 min)</td></tr>
-          <tr><td>Thu</td><td>Sport-Specific Drills (Football/Basketball)</td></tr>
-          <tr><td>Fri</td><td>HIIT + Plyometric Training</td></tr>
-          <tr><td>Sat</td><td>Agility Ladder + Jump Training</td></tr>
-          <tr><td>Sun</td><td>Active Recovery (Yoga/Swimming)</td></tr>
-        </table>`;
-      }
-      document.getElementById("exercisePlan").innerHTML = plan;
-      
-      // Store latest results for PDF
-      latestData = { height, weight, sprint, pushups, stamina, bmi: bmi.toFixed(2), totalScore, suggestion, plan };
-      document.getElementById("downloadPDF").style.display = "inline-block";
-    }
-    
-    async function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      doc.setFontSize(18);
-      doc.text("AI-Powered Sports Talent Report", 20, 20);
-      
-      doc.setFontSize(12);
-      doc.text(`Height: ${latestData.height} cm`, 20, 40);
-      doc.text(`Weight: ${latestData.weight} kg`, 20, 50);
-      doc.text(`100m Sprint: ${latestData.sprint} sec`, 20, 60);
-      doc.text(`Push-ups/min: ${latestData.pushups}`, 20, 70);
-      doc.text(`Stamina: ${latestData.stamina}/10`, 20, 80);
-      doc.text(`BMI: ${latestData.bmi}`, 20, 90);
-      doc.text(`Talent Score: ${latestData.totalScore}/100`, 20, 100);
-      
-      doc.text("AI Suggestion:", 20, 120);
-      doc.text(latestData.suggestion.replace(/<[^>]+>/g, ''), 20, 130, { maxWidth: 170 });
-      
-      // Add Radar Chart as Image
-      let chartCanvas = document.getElementById("talentChart");
-      let chartImage = chartCanvas.toDataURL("image/png", 1.0);
-      doc.addImage(chartImage, "PNG", 110, 40, 80, 80);
-      
-      doc.addPage();
-      doc.setFontSize(16);
-      doc.text("7-Day Exercise Plan", 20, 20);
-      
-      doc.setFontSize(12);
-      doc.text("Refer to web view for full detailed table.", 20, 40);
-      
-      doc.save("Talent_Report.pdf");
+      document.getElementById("aiSuggestion").innerHTML = `<b>AI Suggestion:</b> ${suggestion}`;
+      document.getElementById("exercisePlan").innerHTML = exercisePlan;
     }
   </script>
 </body>
